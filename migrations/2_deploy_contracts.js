@@ -22,16 +22,25 @@ module.exports = async function(deployer) {
   await deployer.deploy(FIFSRegistrar, ENS.address, root);
   var resolver = await PublicResolver.deployed();
   var registrar = await FIFSRegistrar.deployed();
+  console.log("resolver", resolver.address)
+  console.log("registrar", registrar.address)
+  console.log(1)
   await ens.setSubnodeOwner(root, web3.utils.sha3(tld), owner, {from: owner});
+  console.log(2)
   await ens.setSubnodeOwner(namehash.hash(tld), web3.utils.sha3('simplestorage'), owner, {from: owner});
-  await ens.setSubnodeOwner(namehash.hash('simplestorage.eth'), web3.utils.sha3('makoto'), owner, {from: owner});
+  console.log(3)
+  // await ens.setSubnodeOwner(namehash.hash('simplestorage.eth'), web3.utils.sha3('makoto'), owner, {from: owner});
   await ens.setResolver(root, resolver.address, {from: owner});
+  console.log(4)
   await ens.setResolver(namehash.hash(tld), resolver.address, {from: owner});
+  console.log(5)
   await ens.setResolver(namehash.hash('simplestorage.eth'), resolver.address, {from: owner});
-  await ens.setResolver(namehash.hash('makoto.simplestorage.eth'), resolver.address, {from: owner});
+  console.log(6)
+  // await ens.setResolver(namehash.hash('makoto.simplestorage.eth'), resolver.address, {from: owner});
   await resolver.setAddr(namehash.hash(tld), owner, {from: owner});
+  console.log(7)
   await resolver.setAddr(namehash.hash('simplestorage.eth'), owner, {from: owner});
-  await resolver.setAddr(namehash.hash('makoto.simplestorage.eth'), owner, {from: owner});
+  // await resolver.setAddr(namehash.hash('makoto.simplestorage.eth'), owner, {from: owner});
 
   console.log('ens owner for root', await ens.owner(root));
   console.log('ens owner for eth', await ens.owner(namehash.hash(tld)));
