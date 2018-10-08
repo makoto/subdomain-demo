@@ -11,5 +11,10 @@
   },
   "keywords": [],
   "author": "Makoto Inoue <inouemak@googlemail.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@ensdomains/ens": "^0.1.1",
+    "eth-ens-namehash": "^2.0.8",
+    "ethereum-ens": "^0.7.4"
+  }
 }
