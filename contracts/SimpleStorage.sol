@@ -1,13 +1,12 @@
 pragma solidity ^0.4.24;
 import "@ensdomains/ens/contracts/ENSRegistry.sol";
 import "@ensdomains/ens/contracts/PublicResolver.sol";
-import "@ensdomains/ens/contracts/FIFSRegistrar.sol";
 
 contract SimpleStorage {
   uint storedData;
-  FIFSRegistrar public registrar;
   PublicResolver public resolver;
   ENS public ens;
+  bytes32 public rootNode;
 
   function set(uint x) public {
     storedData = x;
@@ -17,21 +16,17 @@ contract SimpleStorage {
     return storedData;
   }
 
-  function getENS() view returns(address){
-    return address(ens);
-  }
-
-  function setENS(ENS ensAddr, PublicResolver resolverAddr, FIFSRegistrar registrarAddr) public {
+  function setENS(ENS ensAddr, bytes32 _rootNode) public {
     ens = ensAddr;
-    resolver = resolverAddr;
-    registrar = registrarAddr;
+    rootNode = _rootNode;
+    resolver = PublicResolver(ens.resolver(rootNode));
   }
 
-  // register(simplestorage.eth, makoto, makoto.simplestorage.eth)
-  function register(bytes32 rootNode, bytes32 label, bytes32 fullAddr) public {
-    // registrar.register(label, msg.sender);
+  function register(bytes32 label) public {
+    bytes32 node = keccak256(abi.encodePacked(rootNode, label));
     ens.setSubnodeOwner(rootNode, label, this);
-    ens.setResolver(fullAddr, resolver);
-    resolver.setAddr(fullAddr, msg.sender);
+    ens.setResolver(node, resolver);
+    resolver.setAddr(node, msg.sender);
+    ens.setOwner(node, msg.sender);
   }
 }

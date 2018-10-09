@@ -1,8 +1,7 @@
 const SimpleStorage = artifacts.require("./SimpleStorage.sol");
 const ENSContract = artifacts.require('./ENSRegistry.sol');
-const RegistrarContract = artifacts.require('./FIFSRegistrar.sol');
-const ResolverContract = artifacts.require('./PublicResolver.sol');
-var namehash = require('eth-ens-namehash');
+const ENS = require('ethereum-ens');
+const namehash = require('eth-ens-namehash');
 
 contract("SimpleStorage", accounts => {
   it("...should store the value 89.", async () => {
@@ -19,37 +18,28 @@ contract("SimpleStorage", accounts => {
 
   it.only("...should set ens domain", async () => {
     const simpleStorageInstance = await SimpleStorage.deployed();
-    var ENS = require('ethereum-ens');    
-    var provider = web3.eth.currentProvider;
+    const provider = web3.eth.currentProvider;
     provider.sendAsync = provider.send;
-    var tld = 'eth';
-    var owner = accounts[0];
-    var new_user = accounts[1];
-    var ensi = await ENSContract.deployed();
-    var registrari = await RegistrarContract.deployed();
-    var resolveri = await ResolverContract.deployed();
+    const tld = 'eth';
+    const owner = accounts[0];
+    const new_user = accounts[1];
+    const ensi = await ENSContract.deployed();
+    const username = 'makoto';
+    const domain = 'simplestorage';
+    const fulldomain = `${domain}.${tld}`;
 
-    // await ensi.setSubnodeOwner(namehash.hash(tld), web3.utils.sha3('simplestorage'), registrari.address, {from: owner});
-    await ensi.setSubnodeOwner(namehash.hash(tld), web3.utils.sha3('simplestorage'), simpleStorageInstance.address, {from: owner});
+    // Set the ownership of the domain to your dapp contract
+    await ensi.setOwner(namehash.hash(fulldomain), simpleStorageInstance.address, {from: owner});
 
-    var ens = new ENS(provider, ENSContract.address);
-    console.log('owner', await ens.owner('simplestorage.eth'));  
-    assert.equal(await ens.resolver('simplestorage.eth').addr(), accounts[0].toLowerCase());
+    // Instantiate ENS with locally deployed ENS contract on ganache
+    const ens = new ENS(provider, ENSContract.address);
 
-    // setENS(ENS ensAddr, PublicResolver resolverAddr, FIFSRegistrar registrarAddr) public {
-    // register(bytes32 label, bytes32 fullAddr) public {
-    await simpleStorageInstance.setENS(ensi.address, resolveri.address, registrari.address);
-    console.log('ens      ', await simpleStorageInstance.ens())
-    console.log('resolver ', await simpleStorageInstance.resolver())
-    console.log('registrar', await simpleStorageInstance.registrar())
-    console.log('register', namehash.hash('simplestorage.eth'), web3.utils.sha3('makoto'), namehash.hash('makoto.simplestorage.eth'));
+    assert.equal(await ens.resolver(fulldomain).addr(), owner.toLowerCase());
 
-    await simpleStorageInstance.register(
-      namehash.hash('simplestorage.eth'),
-      web3.utils.sha3('makoto'),
-      namehash.hash('makoto.simplestorage.eth'),
-      {from:new_user}
-    );
-    assert.equal(await ens.resolver('makoto.simplestorage.eth').addr(), new_user.toLowerCase());
+    await simpleStorageInstance.setENS(ensi.address, namehash.hash(fulldomain));
+    await simpleStorageInstance.register(web3.utils.sha3(username), {from:new_user});
+
+    assert.equal(await ens.resolver(`${username}.${fulldomain}`).addr(), new_user.toLowerCase());
+    assert.equal(await ens.owner(`${username}.${fulldomain}`), new_user.toLowerCase());
   })
 });
