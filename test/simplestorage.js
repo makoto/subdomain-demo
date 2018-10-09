@@ -22,7 +22,8 @@ contract("SimpleStorage", accounts => {
     provider.sendAsync = provider.send;
     const tld = 'eth';
     const owner = accounts[0];
-    const new_user = accounts[1];
+    const newuser = accounts[1];
+    const anotheruser = accounts[2];
     const ensi = await ENSContract.deployed();
     const username = 'makoto';
     const domain = 'simplestorage';
@@ -33,13 +34,24 @@ contract("SimpleStorage", accounts => {
 
     // Instantiate ENS with locally deployed ENS contract on ganache
     const ens = new ENS(provider, ENSContract.address);
-
+    // Make sure that you have ownership of the fulldomain which was set at deployment.
     assert.equal(await ens.resolver(fulldomain).addr(), owner.toLowerCase());
 
+    // Set ens address and fulldomain
     await simpleStorageInstance.setENS(ensi.address, namehash.hash(fulldomain));
-    await simpleStorageInstance.register(web3.utils.sha3(username), {from:new_user});
+    await simpleStorageInstance.register(web3.utils.sha3(username), {from:newuser});
 
-    assert.equal(await ens.resolver(`${username}.${fulldomain}`).addr(), new_user.toLowerCase());
-    assert.equal(await ens.owner(`${username}.${fulldomain}`), new_user.toLowerCase());
+    // Make sure that the eth address is set into the suddomain with the same ownership so that the user can control.
+    assert.equal(await ens.resolver(`${username}.${fulldomain}`).addr(), newuser.toLowerCase());
+    assert.equal(await ens.owner(`${username}.${fulldomain}`), newuser.toLowerCase());
+
+    // Make sure that you cannot take the same username
+    try {
+      await simpleStorageInstance.register(web3.utils.sha3(username), {from:anotheruser}).catch(()=>{});
+    } catch (err) {
+      assert(err.reason === 'the user name taken');
+    }
+    assert.notEqual(await ens.resolver(`${username}.${fulldomain}`).addr(), anotheruser.toLowerCase());
+    assert.notEqual(await ens.owner(`${username}.${fulldomain}`), anotheruser.toLowerCase());
   })
 });

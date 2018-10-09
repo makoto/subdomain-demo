@@ -22,8 +22,14 @@ contract SimpleStorage {
     resolver = PublicResolver(ens.resolver(rootNode));
   }
 
+  function getNode(bytes32 label) public view returns(bytes32){
+    return keccak256(abi.encodePacked(rootNode, label));
+  }
+
   function register(bytes32 label) public {
-    bytes32 node = keccak256(abi.encodePacked(rootNode, label));
+    bytes32 node = getNode(label);
+    require(ens.owner(node) == address(0), "the user name taken");
+
     ens.setSubnodeOwner(rootNode, label, this);
     ens.setResolver(node, resolver);
     resolver.setAddr(node, msg.sender);
